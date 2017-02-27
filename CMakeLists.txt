@@ -9,25 +9,18 @@ project (FLAC)
 # Find required Ogg depencies.
 # Assumes CMAKE_PREFIX_PATH is passed to cmake as a basis to search from. 
 # The paths below are relative to this path.
-
-# Find ogg headers
-FIND_PATH(OGG_INCLUDE_DIR
-    ogg.h
-    PATH_SUFFIXES include/ogg
-)
-
-if(OGG_INCLUDE_DIR)
-    message(STATUS "Found ogg headers at ${OGG_INCLUDE_DIR}")
-    include_directories(OGG_INCLUDE_DIR)
+# Find ogg dependency
+if(NOT OGG_ROOT)
+    find_package(PkgConfig QUIET)
+    pkg_check_modules(PC_OGG QUIET ogg)
+    find_path(OGG_INCLUDE_DIRS NAMES ogg/ogg.h HINTS ${PC_OGG_INCLUDE_DIRS} PATH_SUFFIXES ogg)
+    find_library(OGG_LIBRARIES NAMES ogg HINTS ${PC_OGG_LIBRARY_DIRS})
 else()
-    message(FATAL_ERROR "Could not find required OGG headers" )
+    find_path(OGG_INCLUDE_DIRS NAMES ogg/ogg.h HINTS ${OGG_ROOT}/include PATH_SUFFIXES ogg)
+    find_library(OGG_LIBRARIES NAMES ogg HINTS ${OGG_ROOT}/lib ${OGG_ROOT}/lib64)
 endif()
-
-# Find ogg libraries to link to later
-FIND_LIBRARY(OGG_LIBRARIES
-    NAMES ogg libogg
-    PATH_SUFFIXES lib
-)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(OGG DEFAULT_MSG OGG_INCLUDE_DIRS OGG_LIBRARIES)
 
 if(OGG_LIBRARIES)
     message(STATUS "Found ogg libs at ${OGG_LIBRARIES}")
@@ -35,7 +28,10 @@ else()
     message(FATAL_ERROR "Could not find required OGG library" )
 endif()
 
-add_definitions(-DVERSION="1.3.1" -DFLAC_API_EXPORTS)
+include_directories("${OGG_INCLUDE_DIRS}")
+add_definitions(-DPACKAGE_VERSION="1.3.2")
+add_definitions(-DFLAC__HAS_OGG=1)
+add_definitions(-DFLAC__NO_DLL)
 
 if (NOT FLAC_CPU_X86_64)
     set(FLAC_USE_ASM OFF CACHE BOOL "Use assembler")
@@ -113,7 +109,6 @@ if (FLAC_USE_SSE41)
     )
 endif()
 
-
 add_definitions(-DFLAC__HAS_X86INTRIN)
 
 if (FLAC_USE_ASM)
@@ -158,7 +153,7 @@ set(FLAC_SOURCES ${FLAC_SRC_LIBFLAC} ${FLAC_SRC_SHARE})
 include_directories("${FLAC_SOURCE_DIR}/include")
 include_directories("${FLAC_SOURCE_DIR}/src/libflac/include")
 
-add_library(FLAC SHARED
+add_library(FLAC STATIC
     ${FLAC_SOURCES}
     ${FLAC_ASM_OUT}
 )

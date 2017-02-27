@@ -1,0 +1,7 @@
+
+These scripts compile flac as a NuGet Package.
+Use with Visual Studio or MSBuild.
+Prepared for continuous integration services.
+
+https://www.nuget.org/packages/flac-msvc14-x86/
+https://www.nuget.org/packages/flac-msvc14-x64/
